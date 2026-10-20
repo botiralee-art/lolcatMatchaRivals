@@ -1,18 +1,3 @@
---==========================================================================
---  lolcat  |  Matcha edition  |  Rivals
---
---  Written for the Matcha LuaVM (external, no hooks, no remotes):
---    * UI            : Drawing API, rebuilt with lolcat's palette / metrics
---    * Ragebot       : Evasion Off / Random / Translocate  (no desync, no FireServer)
---                      moves your HumanoidRootPart, aims with mousemoverel,
---                      fires with mouse1click
---    * Everything else uses only documented Matcha APIs.
---
---  Memory features (Gravity, camera look vector) need
---  "allow unsafe LuaU execution" and the offsets in OFF below. Everything
---  checks the pointers first and fails soft, and Settings > General has a
---  "Copy Diagnostics" button that reports what works on your build.
---==========================================================================
 
 local G = _G
 if not pcall(function() G.__lolcat_probe = true end) then G = {} end
@@ -20,9 +5,7 @@ if G.lolcatMatcha and G.lolcatMatcha.Unload then pcall(G.lolcatMatcha.Unload) en
 local K = { alive = true, errors = {}, errorCount = 0 }
 G.lolcatMatcha = K
 
---------------------------------------------------------------------------
--- services & locals
---------------------------------------------------------------------------
+
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
@@ -40,16 +23,14 @@ local function try(f, ...) local ok, a = pcall(f, ...) if ok then return a end r
 
 local hasMem = type(memory_read) == "function" and type(memory_write) == "function"
 
--- imtheo offsets (offsets.imtheo.lol). Edit here when Roblox updates.
+
 local OFF = {
     WorkspaceToWorld = 0x400,
     WorldGravity     = 0x22C,
     CameraRotation   = 0xC8,
 }
 
---------------------------------------------------------------------------
--- colours  (packed 0xRRGGBB integers so they compare cheaply)
---------------------------------------------------------------------------
+
 local function pack(r, g, b) return floor(r) * 65536 + floor(g) * 256 + floor(b) end
 local function rgb3(c) return floor(c / 65536) % 256, floor(c / 256) % 256, c % 256 end
 local function mix(a, b, t)
@@ -58,7 +39,7 @@ local function mix(a, b, t)
     return pack(lerp(ar, br, t) + 0.5, lerp(ag, bg, t) + 0.5, lerp(ab, bb, t) + 0.5)
 end
 
--- lolcat's own theme table (Theme defaults in the dump)
+
 local T = {
     Accent = pack(154, 213, 222), Outline = pack(24, 25, 24), Background = pack(0, 0, 0),
     ElementBackground = pack(6, 6, 6), TabButtonSelected = pack(51, 65, 70), Unselected = pack(75, 72, 72),
@@ -94,9 +75,7 @@ local function c2hsv(c)
     return h, s, mx
 end
 
---------------------------------------------------------------------------
--- renderer: pooled Drawing objects with per-property change cache
---------------------------------------------------------------------------
+
 local R = { clip = nil }
 local KINDS = { "Square", "Text", "Line", "Circle" }
 local pool, used, shown = {}, {}, {}
@@ -122,9 +101,7 @@ local function C3(p)
     return c
 end
 
--- Matcha rejects some documented property names ("Unknown property FontSize"),
--- so every write is protected; a property that throws once is disabled for good
--- and listed in the diagnostics instead of aborting the whole frame.
+
 local badProps = {}
 K.badProps = badProps
 local function put(o, k, v)
@@ -264,8 +241,7 @@ function R.circle(cx, cy, r, color, filled, th, sides)
     sp(e, "Color", C3(color))
 end
 
--- Pictures (Drawing "Image"): one object per key, kept between frames so a texture is
--- uploaded once. Images can't be clipped, so one is only drawn if it fits inside R.clip.
+
 local imgPool, imgDrawn, imgSeen, imgCount = {}, {}, {}, 0
 function R.image(path, data, x, y, w, h)
     local cl = R.clip
@@ -329,9 +305,7 @@ function R.destroy()
     end
 end
 
---------------------------------------------------------------------------
--- input
---------------------------------------------------------------------------
+
 local I = { mx = 0, my = 0, down = false, pressed = false, rdown = false, rpressed = false }
 local function keyDown(vk)
     if not vk then return false end
@@ -384,9 +358,7 @@ local function evalBind(b)
 end
 local function featureOn(cfg) return cfg.enabled and cfg.bind.active end
 
---------------------------------------------------------------------------
--- settings store (defaults mirror lolcat's Ragebot / Aimbot / ESP layout)
---------------------------------------------------------------------------
+
 local function espSide(on)
     return {
         enabled = on,
